@@ -8,6 +8,9 @@ Run from inside your Mastodon ("live") directory:
 `--prefix [prefix]`
 	Prefix shortcodes of all imported emoji with a string
 
+`--category [category]`
+	Assigns new emojis to category
+
 `--dry-run`
 	Don't actually save anything to the database
 
