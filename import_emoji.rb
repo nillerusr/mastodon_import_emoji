@@ -98,8 +98,13 @@ def import_emoji(shortcode, image)
     puts "Importing :" + shortcode + ":"
     
     emoji.destroy if emoji != nil and $dbimport
-    
-    emoji = CustomEmoji.new(domain: nil, shortcode: shortcode, image: image, visible_in_picker: $visible_in_picker)
+
+    category = nil
+    if $emoji_category != nil then
+        category = CustomEmojiCategory.find_or_create_by!(name: $emoji_category)
+    end
+
+    emoji = CustomEmoji.new(domain: nil, category: category, shortcode: shortcode, image: image, visible_in_picker: $visible_in_picker)
     emoji.save if $dbimport
 end
 
@@ -110,6 +115,8 @@ def usage
     puts "Options:"
     puts "\t--prefix [prefix]"
     puts "\t\tPrefix shortcodes of all imported emoji with a string"
+    puts "\t--category [category]"
+    puts "\t\tAssigns new emojis to category"
     puts "\t--dry-run"
     puts "\t\tDon't actually save anything to the database"
     puts "\t--match [regexp]"
@@ -203,7 +210,7 @@ def import_steamgame
     steam_app_id = steam_game.to_i
     
     puts "Loading Steam Community Market search"
-    search_page = Nokogiri::HTML(open("http://steamcommunity.com/market/search?category_753_Game[]=tag_app_#{steam_app_id}&category_753_item_class[]=tag_item_class_4&appid=753"))
+    search_page = Nokogiri::HTML(URI.open("http://steamcommunity.com/market/search?category_753_Game[]=tag_app_#{steam_app_id}&category_753_item_class[]=tag_item_class_4&appid=753"))
     
     search_page.css('.market_listing_item_name').each do |item_name_el|
         import_steam_emote(item_name_el.content)
@@ -462,6 +469,7 @@ $cropsquare = false
 $visible_in_picker = true
 $delete_existing = true
 $convert_gif = false
+$emoji_category = nil
 while true do
     arg = ARGV.shift
     if arg === nil then
@@ -469,6 +477,8 @@ while true do
         exit
     elsif arg == "--prefix" then
         $prefix = ARGV.shift
+    elsif arg == "--category" then
+        $emoji_category = ARGV.shift
     elsif arg == "--dry-run" then
         $dbimport = false
     elsif arg == "--match" then
@@ -522,8 +532,9 @@ elsif command == "hashflags" then
     import_hashflags
 elsif command == "emojipack" then
     import_emojipack
+elsif command == "import_file" then
+    import_file
 else
     puts "Unknown command \"" + command + "\""
     usage
 end
-
